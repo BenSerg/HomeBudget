@@ -1,7 +1,7 @@
-from main_window import MainWindow
 from create_widgets_functions import *
-from window_functions import *
+from main import conn
 from main_window import MainWindow
+from window_functions import *
 
 
 class JournalWindow(QWidget):
@@ -66,12 +66,32 @@ class BalanceCreate(QWidget):
         self.main_menu.show()
         self.close()
 
+    def create_balance(self):
+        cur = conn.cursor()
+        cur.execute(f"insert into balance(create_date) values('{self.datetime_input.text()}')")
+        cur.execute(
+            f"select o.id from operations o join balance b on extract(month from o.create_date) = extract(month FROM b.create_date) "
+            f"where extract(month from o.create_date) = extract(month from b.create_date) and balance_id is null"
+        )
+        id_operations = tuple(i[0] for i in cur.fetchall())
+        cur.execute(f"select id from balance order by id desc limit 1")
+        balance_id = cur.fetchone()[0]
+        cur.execute(f"update operations set balance_id = {balance_id} where id in {id_operations}")
+        cur.execute(f"update balance set debit = (select sum(debit) from operations where id in {id_operations}), "
+                    f"credit = (select sum(credit) from operations where id in {id_operations}) where id = {balance_id}")
+        cur.execute(f"update balance set amount = debit - credit where id = {balance_id}")
+        msgbox = create_msg_box(title='Уведомления', message='Баланс успешно сформирован')
+        msgbox.exec_()
+        conn.commit()
+
     def __init__(self):
         super().__init__()
+        self.datetime_input = None
+        self.datetime_label = None
         self.return_button = None
         self.ok_button = None
-        self.key_label = None
-        self.input_field = None
+        self.month_number = None
+        self.month_input = None
         self.main_menu = None
         self.setup_ui()
 
@@ -81,10 +101,12 @@ class BalanceCreate(QWidget):
         font = QtGui.QFont()
         font.setFamily("Serif")
         font.setPointSize(15)
-        self.input_field = create_line_edit(self, 50, 200, 700, 60, font)
+        self.datetime_input = create_datetime_edit(self, 250, 150, 300, 50, font)
         font.setBold(True)
-        self.key_label = create_label(self, 50, 100, 800, 50, font, 'Введите через запятую наименования квитанций')
+        self.datetime_label = create_label(self, 225, 100, 800, 50, font, 'Введите дату формирования')
+
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.create_balance)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
@@ -96,6 +118,19 @@ class BalanceDelete(QWidget):
         self.main_menu = JournalWindow()
         self.main_menu.show()
         self.close()
+
+    def delete_balance(self):
+        cur = conn.cursor()
+        cur.execute(f"select * from balance where id = 10")
+        if cur.rowcount == 0:
+            msgbox = create_msg_box(title='Ошибка',
+                                    message=f'Баланс с идентификатором {self.input_field.text()} не существует')
+        else:
+            cur.execute(f"delete from balance where id = {self.input_field.text()}")
+            msgbox = create_msg_box(title='Уведомление',
+                                    message=f'Баланс с идентификатором {self.input_field.text()} удален')
+        conn.commit()
+        msgbox.exec_()
 
     def __init__(self):
         super().__init__()
@@ -114,6 +149,7 @@ class BalanceDelete(QWidget):
         font.setBold(True)
         self.key_label = create_label(self, 200, 100, 800, 50, font, 'Введите идентификатор баланса')
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.delete_balance)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
@@ -126,32 +162,39 @@ class BalanceView(QWidget):
         self.main_menu.show()
         self.close()
 
+    def setup_table(self):
+        self.table_widget = QtWidgets.QTableWidget(self)
+        cur = conn.cursor()
+        cur.execute(f"select * from balance")
+        data = cur.fetchall()
+        self.table_widget.setRowCount(len(data))
+        self.table_widget.setColumnCount(len(data[0]))
+        for row_num, row_data in enumerate(data):
+            for col_num, col_data in enumerate(row_data):
+                item = QtWidgets.QTableWidgetItem(str(col_data))
+                self.table_widget.setItem(row_num, col_num, item)
+        conn.commit()
+        self.table_widget.setHorizontalHeaderLabels(
+            ['Идентификатор', 'Дата формирования', 'Приход', 'Расход', 'Прибыль'])
+        self.table_widget.resizeColumnToContents(1)
+        self.table_widget.setGeometry(50, 50, 700, 500)
+
     def __init__(self):
+        self.return_button = None
+        self.table_widget = None
         self.main_menu = None
-        font = create_font()
+
         super().__init__()
 
-        self.setWindowTitle('Table Data Example')
+        self.setup_ui()
         set_window_geometry(self)
 
-        self.tableWidget = QtWidgets.QTableWidget(self)
-        self.tableWidget.setRowCount(3)
-        self.tableWidget.setColumnCount(3)
-
-        data = [
-            ['John', 'Doe', 30],
-            ['Jane', 'Smith', 25],
-            ['Tom', 'Brown', 40]
-        ]
-
-        for i in range(len(data)):
-            for j in range(len(data[i])):
-                item = QtWidgets.QTableWidgetItem(str(data[i][j]))
-                self.tableWidget.setItem(i, j, item)
-
-        self.tableWidget.setGeometry(QtCore.QRect(150, 150, 150, 150))
+    def setup_ui(self):
+        self.setWindowTitle('Просмотр балансов')
+        font = create_font()
         font.setBold(True)
         font.setPointSize(41)
         font.setWeight(75)
+        self.setup_table()
         self.return_button = create_return_button(self, font)
         self.return_button.clicked.connect(self.return_to_journal_window)

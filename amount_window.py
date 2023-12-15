@@ -1,3 +1,4 @@
+from main import conn
 from main_window import MainWindow
 from create_widgets_functions import *
 from window_functions import *
@@ -11,7 +12,15 @@ class AmountWindow(QWidget):
         self.close()
 
     def create_graph(self):
-        self.graph_window = GraphWindow(self)
+        cur = conn.cursor()
+        cur.execute(
+            f"select accumulated_sum, create_date from (select operations.create_date, sum(sum(operations.debit)"
+            f" - sum(operations.credit)) over (order by operations.create_date) as accumulated_sum from operations"
+            f" where operations.create_date >= '{self.from_date.text()}' and operations.create_date <= '{self.to_date.text()}' "
+            f"group by operations.create_date) as subquery;")
+        data = cur.fetchall()
+        dct = {i[1]: i[0] for i in data}
+        self.graph_window = GraphWindow(self, list(dct.keys()), list(dct.values()))
         self.graph_window.show()
         self.close()
 

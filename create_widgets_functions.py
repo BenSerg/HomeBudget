@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import QDate
 from PyQt5.QtWidgets import QWidget, QStackedWidget, QMainWindow, QVBoxLayout, QPushButton, QLineEdit, QDateTimeEdit, \
-    QRadioButton, QLabel
+    QRadioButton, QLabel, QMessageBox
 
 
 def create_label(widget, x, y, width, height, font, object_name):
@@ -40,11 +41,16 @@ def create_line_edit(widget, x, y, width, height, font, background_color='white'
 
 
 def create_datetime_edit(widget, x, y, width, height, font, background_color='white'):
-    line_edit = QDateTimeEdit(widget)
-    line_edit.setGeometry(QtCore.QRect(x, y, width, height))
-    line_edit.setFont(font)
-    line_edit.setStyleSheet(f'background-color: {background_color};')
-    return line_edit
+    datetime_edit = QDateTimeEdit(widget)
+    datetime_edit.setGeometry(QtCore.QRect(x, y, width, height))
+    datetime_edit.setFont(font)
+    datetime_edit.setStyleSheet(f'background-color: {background_color};')
+    datetime_edit.setDate(QDate.currentDate())
+    return datetime_edit
+
+
+def check_pressed(radiobutton: QRadioButton):
+    return radiobutton.isChecked()
 
 
 def create_ok_button(widget, font):
@@ -58,3 +64,11 @@ def create_radio_button(widget, x, y, width, height, font, object_name, backgrou
     button.setStyleSheet(f'background-color: {background_color};')
     button.setObjectName(object_name)
     return button
+
+
+def create_msg_box(title, message):
+    msgbox = QMessageBox()
+    msgbox.setIcon(QMessageBox.Information)
+    msgbox.setWindowTitle(title)
+    msgbox.setText(message)
+    return msgbox

@@ -1,4 +1,5 @@
 from create_widgets_functions import *
+from main import conn
 from window_functions import *
 from graph_window import *
 from main_window import MainWindow
@@ -11,7 +12,28 @@ class FinancialThreads(QWidget):
         self.close()
 
     def create_graph(self):
-        self.graph_window = GraphWindow(self)
+        cur = conn.cursor()
+        cur.execute(f"select id from articles where name in {tuple(self.input_field.text().split(','))}")
+        ids = tuple(i[0] for i in cur.fetchall())
+        cur.execute(
+            f"""select article_id,
+            case
+                when credit = 0 then 0
+                else cast(debit / credit as DECIMAL(10,3))
+            end as debit_credit_ratio
+        from 
+            (select
+                operations.article_id,
+                sum(operations.debit) as debit,
+                sum(operations.credit) as credit from operations where operations.article_id in {ids}
+             group by operations.article_id) as subquery
+            order by 
+            article_id;""")
+        data = cur.fetchall()
+        id_hist = tuple([i[0] for i in data])
+        cur.execute(f"select name from articles where id in {id_hist}")
+        names = tuple(i[0] for i in cur.fetchall())
+        self.graph_window = GraphWindow(self, [i[1] for i in data], names)
         self.graph_window.show()
         self.close()
 
@@ -36,8 +58,6 @@ class FinancialThreads(QWidget):
         font.setFamily("Serif")
         font.setPointSize(15)
         self.input_field = create_line_edit(self, 50, 200, 700, 60, font)
-        self.from_date = create_datetime_edit(self, 125, 40, 210, 40, font)
-        self.to_date = create_datetime_edit(self, 400, 40, 210, 40, font)
         font.setBold(True)
         self.from_date_label = create_label(self, 125, 10, 260, 31, font, 'Начало периода')
         self.to_date_label = create_label(self, 400, 10, 260, 31, font, 'Конец периода')

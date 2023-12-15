@@ -1,6 +1,7 @@
 from main_window import MainWindow
 from create_widgets_functions import *
 from window_functions import *
+from main import conn
 
 
 class ArticleWindow(QWidget):
@@ -66,11 +67,19 @@ class ArticlesEnterWindow(QWidget):
         self.article_window.show()
         self.close()
 
+    def insert_article(self):
+        cur = conn.cursor()
+        cur.execute(f"insert into articles(name) values ('{self.name_input.text()}')")
+        msgbox = create_msg_box(title='Уведомление', message='Квитанция успешно зарегистрирована')
+        msgbox.exec_()
+        conn.commit()
+
     def __init__(self):
         super().__init__()
         self.return_button = None
         self.ok_button = None
         self.name_label = None
+        self.success_label = None
         self.name_input = None
         self.article_window = None
         self.layout = QVBoxLayout()
@@ -85,6 +94,7 @@ class ArticlesEnterWindow(QWidget):
         self.name_label = create_label(self, 245, 140, 350, 31, font, 'Наименование квитанции')
 
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.insert_article)
         font.setPointSize(41)
         font.setBold(True)
         font.setWeight(75)
@@ -99,6 +109,18 @@ class ArticlesModifyWindow(QWidget):
         self.article_window = ArticleWindow()
         self.article_window.show()
         self.close()
+
+    def modify_article(self):
+        cur = conn.cursor()
+        cur.execute(
+            f"update articles set name = '{self.name_input.text()}' where name = '{self.old_name_input.text()}'")
+        if cur.rowcount == 0:
+            msgbox = create_msg_box(title='Ошибка', message='Квитанция с таким старым наименованием не существует')
+        else:
+            msgbox = create_msg_box(title='Уведомления', message=f'Квитанции с именем {self.old_name_input.text()} успешно изменены на {self.name_input.text()}')
+
+        msgbox.exec_()
+        conn.commit()
 
     def __init__(self):
         super().__init__()
@@ -126,6 +148,7 @@ class ArticlesModifyWindow(QWidget):
         self.name_label = create_label(self, 400, 70, 321, 16, font, 'Новое наименование')
 
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.modify_article)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
@@ -139,6 +162,16 @@ class ArticlesDeleteWindow(QWidget):
         self.article_window = ArticleWindow()
         self.article_window.show()
         self.close()
+
+    def delete_article(self):
+        cur = conn.cursor()
+        cur.execute(f"delete from articles where name = '{self.name_input.text()}'")
+        if cur.rowcount == 0:
+            msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
+        else:
+            msgbox = create_msg_box(title='Уведомление', message=f'Квитанции с именем {self.name_input.text()} успешно удалены')
+        msgbox.exec_()
+        conn.commit()
 
     def __init__(self):
         super().__init__()
@@ -159,6 +192,7 @@ class ArticlesDeleteWindow(QWidget):
         self.name_label = create_label(self, 245, 140, 350, 31, font, 'Наименование квитанции')
 
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.delete_article)
         font.setPointSize(41)
         font.setBold(True)
         font.setWeight(75)

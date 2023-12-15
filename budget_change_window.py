@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from main_window import MainWindow
 from create_widgets_functions import *
 from window_functions import *
 from graph_window import *
+from main import conn
 
 
 class BudgetChange(QWidget):
@@ -25,7 +28,17 @@ class BudgetChange(QWidget):
         self.setup_ui()
 
     def create_graph(self):
-        self.graph_window = GraphWindow(self)
+        cur = conn.cursor()
+        cur.execute(f"select id from articles where name in {tuple(self.input_field.text().split(','))}")
+        ids = tuple(i[0] for i in cur.fetchall())
+        cur.execute(
+            f"select sum(operations.credit), sum(operations.debit), operations.create_date from articles join operations on "
+            f"articles.id = operations.article_id where operations.create_date >= '{self.from_date.text()}' and articles.id in {ids} and "
+            f"operations.create_date <= '{self.to_date.text()}' group by operations.create_date")
+        data = cur.fetchall()
+        dct = {i[2]: (i[0], i[1]) for i in data}
+        dct = {i: dct[i] for i in sorted(dct)}
+        self.graph_window = GraphWindow(self, list(dct.keys()), list(dct.values()))
         self.graph_window.show()
         self.close()
 

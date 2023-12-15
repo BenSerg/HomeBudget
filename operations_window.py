@@ -1,6 +1,7 @@
 from main_window import MainWindow
 from create_widgets_functions import *
 from window_functions import *
+from main import conn
 
 
 class OperationsWindow(QWidget):
@@ -67,6 +68,19 @@ class OperationsEnterWindow(QWidget):
         self.operations_window.show()
         self.close()
 
+    def insert_operation(self):
+        cur = conn.cursor()
+        cur.execute(f"select id from articles where name = '{self.name_input.text()}'")
+        if cur.rowcount == 0:
+            msgbox = create_msg_box('Ошибка', f'Квитанции с наименованием {self.name_input.text()} не существует')
+        else:
+            article_id = cur.fetchone()[0]
+            cur.execute(
+                f"insert into operations(article_id, debit, credit, create_date) values({article_id}, {self.debit_input.text()}, {self.credit_input.text()}, '{self.datetime_input.text()}')")
+            msgbox = create_msg_box('Уведомление', f'Операция по квитанции {self.name_input.text()} успешно вставлена')
+        msgbox.exec_()
+        conn.commit()
+
     def __init__(self):
         super().__init__()
         self.return_button = None
@@ -99,6 +113,7 @@ class OperationsEnterWindow(QWidget):
         self.datetime_label = create_label(self, 70, 70, 321, 31, font, 'Дата и время')
 
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.insert_operation)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
@@ -112,6 +127,45 @@ class OperationsModifyWindow(QWidget):
         self.operations_window = OperationsWindow()
         self.operations_window.show()
         self.close()
+
+    def modify_operations(self):
+        if not (check_pressed(self.date_choice) or check_pressed(self.article_choice)):
+            msgbox = create_msg_box(title='Ошибка', message='Не установлен ключ модификации')
+        else:
+            modify_key = check_pressed(self.date_choice)
+            cur = conn.cursor()
+            if modify_key:
+                cur.execute(f"select id from operations where create_date = '{self.choice_field.text()}'")
+                if cur.rowcount == 0:
+                    msgbox = create_msg_box(title='Ошибка', message='Операции с такой датой не существует')
+                else:
+                    id_op = cur.fetchone()[0]
+                    cur.execute(f"select id from articles where name = '{self.article_input.text()}'")
+                    if cur.rowcount != 0:
+                        article_id = cur.fetchone()[0]
+                        cur.execute(
+                            f"update operations set debit={self.debit_input.text()}, "
+                            f"credit={self.credit_input.text()}, article_id = {article_id}, create_date = '{self.datetime_input.text()}' "
+                            f"where id = {id_op}")
+                        msgbox = create_msg_box(title='Уведомление', message='Операция успешно модифицирована')
+                    else:
+                        msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
+            else:
+                if cur.rowcount != 0:
+                    cur.execute(f"select id from articles where name = '{self.choice_field.text()}'")
+                    article_id = cur.fetchone()[0]
+                    cur.execute(f"select id from operations where article_id = {article_id}")
+                    id_op = cur.fetchone()[0]
+                    cur.execute(
+                        f"update operations set debit={self.debit_input.text()}, "
+                        f"credit={self.credit_input.text()}, article_id = {article_id}, create_date = '{self.datetime_input.text()}' "
+                        f"where id = {id_op}")
+                    msgbox = create_msg_box(title='Уведомление', message=f'Операция по статье {self.choice_field.text()} успешно модифицирована')
+                else:
+                    msgbox = create_msg_box(title='Ошибка',
+                                            message='Операции с таким наименованием квитанции не существует')
+        conn.commit()
+        msgbox.exec_()
 
     def __init__(self):
         super().__init__()
@@ -151,11 +205,11 @@ class OperationsModifyWindow(QWidget):
         self.key_label = create_label(self, 10, 140, 261, 31, font, 'Ключ модификации')
         self.debit_label = create_label(self, 440, 50, 301, 31, font, 'Приход в рублях')
         self.credit_label = create_label(self, 440, 130, 321, 31, font, 'Расход в рублях')
-        self.article_label = create_label(self, 440, 200, 321, 31, font, 'Наименование статьи')
+        self.article_label = create_label(self, 440, 200, 321, 31, font, 'Наименование квитанции')
         self.datetime_label = create_label(self, 440, 280, 291, 21, font, 'Новая дата')
 
         self.ok_button = create_ok_button(self, font)
-
+        self.ok_button.clicked.connect(self.modify_operations)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
@@ -167,6 +221,34 @@ class OperationsDeleteWindow(QWidget):
         self.operations_window = OperationsWindow()
         self.operations_window.show()
         self.close()
+
+    def delete_operation(self):
+        if not (check_pressed(self.date_choice) or check_pressed(self.article_choice)):
+            msgbox = create_msg_box(title='Ошибка', message='Ключ удаления не установлен')
+        else:
+            cur = conn.cursor()
+            datetime_key = check_pressed(self.date_choice)
+            if datetime_key:
+                cur.execute(f"select id from operations where create_date = '{self.choice_field.text()}'")
+                if cur.rowcount == 0:
+                    msgbox = create_msg_box(title='Ошибка', message='Операции с такой датой не существует')
+                else:
+                    id_op = tuple([i[0] for i in cur.fetchall()])
+                    cur.execute(f"delete from operations where id in {id_op}")
+                    msgbox = create_msg_box(title='Уведомление',
+                                            message=f'Операция c датой {self.choice_field.text()} удалены')
+            else:
+                cur.execute(f"select id from articles where name = '{self.choice_field.text()}'")
+                if cur.rowcount == 0:
+                    msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
+                else:
+                    article_id = cur.fetchone()[0]
+                    cur.execute(f"select id from operations where article_id = {article_id}")
+                    id_op = cur.fetchone()[0]
+                    cur.execute(f"delete from operations where id in {id_op}")
+                    msgbox = create_msg_box(title='Уведомление',
+                                            message=f'Операция по статье {self.choice_field.text()} успешно удалена')
+        msgbox.exec_()
 
     def __init__(self):
         super().__init__()
@@ -194,6 +276,7 @@ class OperationsDeleteWindow(QWidget):
         self.key_label = create_label(self, 250, 140, 261, 31, font, 'Ключ удаления')
 
         self.ok_button = create_ok_button(self, font)
+        self.ok_button.clicked.connect(self.delete_operation)
         font.setPointSize(41)
         font.setWeight(75)
         self.return_button = create_return_button(self, font)
