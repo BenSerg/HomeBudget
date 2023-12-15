@@ -20,7 +20,7 @@ class AmountWindow(QWidget):
                  f" where operations.create_date >= '{self.from_date.text()}' and operations.create_date <= '{self.to_date.text()}' "
                  f"group by operations.create_date) as subquery;")
         cur.execute(query)
-        logger.debug(f'Окно {self.windowTitle} Выполнен запрос: {query}')
+        logger.debug(f'Выполнен запрос: {query}')
         data = cur.fetchall()
         dct = {i[1]: i[0] for i in data}
         self.graph_window = GraphWindow(self, list(dct.keys()), list(dct.values()))
