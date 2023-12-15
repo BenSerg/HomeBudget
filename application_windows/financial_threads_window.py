@@ -1,8 +1,7 @@
-from create_widgets_functions import *
-from main import conn
-from window_functions import *
-from graph_window import *
-from main_window import MainWindow
+from application_functions.logger import logger
+from config.connection import conn
+from application_windows.graph_window import *
+from application_windows.main_window import MainWindow
 
 
 class FinancialThreads(QWidget):
@@ -13,9 +12,11 @@ class FinancialThreads(QWidget):
 
     def create_graph(self):
         cur = conn.cursor()
-        cur.execute(f"select id from articles where name in {tuple(self.input_field.text().split(','))}")
+        query = f"select id from articles where name in {tuple(self.input_field.text().split(','))}"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос: {query}")
         ids = tuple(i[0] for i in cur.fetchall())
-        cur.execute(
+        query = (
             f"""select article_id,
             case
                 when credit = 0 then 0
@@ -29,9 +30,13 @@ class FinancialThreads(QWidget):
              group by operations.article_id) as subquery
             order by 
             article_id;""")
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
         data = cur.fetchall()
         id_hist = tuple([i[0] for i in data])
-        cur.execute(f"select name from articles where id in {id_hist}")
+        query = f"select name from articles where id in {id_hist}"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос: {query}")
         names = tuple(i[0] for i in cur.fetchall())
         self.graph_window = GraphWindow(self, [i[1] for i in data], names)
         self.graph_window.show()
@@ -42,10 +47,6 @@ class FinancialThreads(QWidget):
         self.return_button = None
         self.ok_button = None
         self.key_label = None
-        self.to_date_label = None
-        self.from_date_label = None
-        self.to_date = None
-        self.from_date = None
         self.input_field = None
         self.graph_window = None
         self.main_menu = None
@@ -59,8 +60,6 @@ class FinancialThreads(QWidget):
         font.setPointSize(15)
         self.input_field = create_line_edit(self, 50, 200, 700, 60, font)
         font.setBold(True)
-        self.from_date_label = create_label(self, 125, 10, 260, 31, font, 'Начало периода')
-        self.to_date_label = create_label(self, 400, 10, 260, 31, font, 'Конец периода')
         font.setBold(True)
         self.key_label = create_label(self, 50, 125, 800, 50, font, 'Введите через запятую наименования квитанций')
         self.ok_button = create_ok_button(self, font)

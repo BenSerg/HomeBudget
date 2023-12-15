@@ -1,7 +1,12 @@
-from create_widgets_functions import *
-from main import conn
-from main_window import MainWindow
-from window_functions import *
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+from application_functions.logger import logger
+from application_windows.view_window import ViewWindow
+from application_functions.create_widgets_functions import *
+from config.connection import conn
+from application_windows.main_window import MainWindow
+from application_functions.window_functions import *
 
 
 class JournalWindow(QWidget):
@@ -21,7 +26,7 @@ class JournalWindow(QWidget):
         self.close()
 
     def goto_balance_view_window(self):
-        self.table_balance = BalanceView()
+        self.table_balance = ViewWindow(self)
         self.table_balance.show()
         self.close()
 
@@ -69,17 +74,28 @@ class BalanceCreate(QWidget):
     def create_balance(self):
         cur = conn.cursor()
         cur.execute(f"insert into balance(create_date) values('{self.datetime_input.text()}')")
-        cur.execute(
+        query = (
             f"select o.id from operations o join balance b on extract(month from o.create_date) = extract(month FROM b.create_date) "
             f"where extract(month from o.create_date) = extract(month from b.create_date) and balance_id is null"
         )
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
+
         id_operations = tuple(i[0] for i in cur.fetchall())
         cur.execute(f"select id from balance order by id desc limit 1")
         balance_id = cur.fetchone()[0]
-        cur.execute(f"update operations set balance_id = {balance_id} where id in {id_operations}")
-        cur.execute(f"update balance set debit = (select sum(debit) from operations where id in {id_operations}), "
-                    f"credit = (select sum(credit) from operations where id in {id_operations}) where id = {balance_id}")
-        cur.execute(f"update balance set amount = debit - credit where id = {balance_id}")
+        query = f"update operations set balance_id = {balance_id} where id in {id_operations}"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
+        query = (f"update balance set debit = (select sum(debit) from operations where id in {id_operations}), "
+                 f"credit = (select sum(credit) from operations where id in {id_operations}) where id = {balance_id}")
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
+
+        query = f"update balance set amount = debit - credit where id = {balance_id}"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
+
         msgbox = create_msg_box(title='Уведомления', message='Баланс успешно сформирован')
         msgbox.exec_()
         conn.commit()

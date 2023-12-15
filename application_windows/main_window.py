@@ -1,42 +1,44 @@
-from create_widgets_functions import *
-from window_functions import *
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+from application_functions.create_widgets_functions import *
+from application_functions.window_functions import *
 from functools import lru_cache
 
 
 @lru_cache
 class MainWindow(QWidget):
     def goto_article_window(self):
-        from article_window import ArticleWindow
+        from application_windows.article_window import ArticleWindow
         self.article_window = ArticleWindow()
         self.article_window.show()
         self.close()
 
     def goto_operations_window(self):
-        from operations_window import OperationsWindow
+        from application_windows.operations_window import OperationsWindow
         self.operations_window = OperationsWindow()
         self.operations_window.show()
         self.close()
 
     def goto_amount_window(self):
-        from amount_window import AmountWindow
+        from application_windows.amount_window import AmountWindow
         self.amount_window = AmountWindow()
         self.amount_window.show()
         self.close()
 
     def goto_journal_window(self):
-        from journal_window import JournalWindow
+        from application_windows.journal_window import JournalWindow
         self.journal_window = JournalWindow()
         self.journal_window.show()
         self.close()
 
     def goto_budget_change_window(self):
-        from budget_change_window import BudgetChange
+        from application_windows.budget_change_window import BudgetChange
         self.budget_change_window = BudgetChange()
         self.budget_change_window.show()
         self.close()
 
     def goto_threads_window(self):
-        from financial_threads_window import FinancialThreads
+        from application_windows.financial_threads_window import FinancialThreads
         self.financial_window = FinancialThreads()
         self.financial_window.show()
         self.close()
@@ -82,11 +84,3 @@ class MainWindow(QWidget):
         self.setLayout(self.layout)
 
 
-if __name__ == "__main__":
-    import sys
-
-    app = QtWidgets.QApplication(sys.argv)
-    main_window = QtWidgets.QMainWindow()
-    ui = MainWindow()
-    ui.show()
-    sys.exit(app.exec_())

@@ -1,13 +1,22 @@
-from main_window import MainWindow
-from create_widgets_functions import *
-from window_functions import *
-from main import conn
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+from application_functions.logger import logger
+from application_windows.main_window import MainWindow
+from application_functions.create_widgets_functions import *
+from application_functions.window_functions import *
+from config.connection import conn
 
 
 class OperationsWindow(QWidget):
     def return_to_main_menu(self):
         self.main_menu = MainWindow()
         self.main_menu.show()
+        self.close()
+
+    def operations_view(self):
+        from application_windows.view_window import ViewWindow
+        self.operations_view_window = ViewWindow(self)
+        self.operations_view_window.show()
         self.close()
 
     def goto_enter_window(self):
@@ -26,6 +35,8 @@ class OperationsWindow(QWidget):
         self.close()
 
     def __init__(self):
+        self.view_button = None
+        self.operations_view_window = None
         self.delete_button = None
         self.delete_window = None
         self.modify_window = None
@@ -59,6 +70,9 @@ class OperationsWindow(QWidget):
 
         self.delete_button = create_button(self, 175, 400, 471, 125, font, 'Удаление операций')
         self.delete_button.clicked.connect(self.goto_delete_window)
+
+        self.view_button = create_button(self, 750, 550, 50, 50, font, '👁')
+        self.view_button.clicked.connect(self.operations_view)
         self.setLayout(self.layout)
 
 
@@ -70,13 +84,17 @@ class OperationsEnterWindow(QWidget):
 
     def insert_operation(self):
         cur = conn.cursor()
-        cur.execute(f"select id from articles where name = '{self.name_input.text()}'")
+        query = f"select id from articles where name = '{self.name_input.text()}'"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
         if cur.rowcount == 0:
             msgbox = create_msg_box('Ошибка', f'Квитанции с наименованием {self.name_input.text()} не существует')
         else:
             article_id = cur.fetchone()[0]
-            cur.execute(
-                f"insert into operations(article_id, debit, credit, create_date) values({article_id}, {self.debit_input.text()}, {self.credit_input.text()}, '{self.datetime_input.text()}')")
+            query = (f"insert into operations(article_id, debit, credit, create_date) values({article_id}, {self.debit_input.text()}, "
+                     f"{self.credit_input.text()}, '{self.datetime_input.text()}')")
+            cur.execute(query)
+            logger.debug(f"Выполнен запрос: {query}")
             msgbox = create_msg_box('Уведомление', f'Операция по квитанции {self.name_input.text()} успешно вставлена')
         msgbox.exec_()
         conn.commit()
@@ -135,32 +153,42 @@ class OperationsModifyWindow(QWidget):
             modify_key = check_pressed(self.date_choice)
             cur = conn.cursor()
             if modify_key:
-                cur.execute(f"select id from operations where create_date = '{self.choice_field.text()}'")
+                query = f"select id from operations where create_date = '{self.choice_field.text()}'"
+                cur.execute(query)
+                logger.debug(f"Выполнен запрос: {query}")
                 if cur.rowcount == 0:
                     msgbox = create_msg_box(title='Ошибка', message='Операции с такой датой не существует')
                 else:
                     id_op = cur.fetchone()[0]
-                    cur.execute(f"select id from articles where name = '{self.article_input.text()}'")
+                    query = f"select id from articles where name = '{self.article_input.text()}'"
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
                     if cur.rowcount != 0:
                         article_id = cur.fetchone()[0]
-                        cur.execute(
-                            f"update operations set debit={self.debit_input.text()}, "
+                        query = (f"update operations set debit={self.debit_input.text()}, "
                             f"credit={self.credit_input.text()}, article_id = {article_id}, create_date = '{self.datetime_input.text()}' "
                             f"where id = {id_op}")
+                        cur.execute(query)
+                        logger.debug(f"Выполнен запрос: {query}")
                         msgbox = create_msg_box(title='Уведомление', message='Операция успешно модифицирована')
                     else:
                         msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
             else:
                 if cur.rowcount != 0:
-                    cur.execute(f"select id from articles where name = '{self.choice_field.text()}'")
+                    query = f"select id from articles where name = '{self.choice_field.text()}'"
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
                     article_id = cur.fetchone()[0]
                     cur.execute(f"select id from operations where article_id = {article_id}")
                     id_op = cur.fetchone()[0]
-                    cur.execute(
+                    query = (
                         f"update operations set debit={self.debit_input.text()}, "
                         f"credit={self.credit_input.text()}, article_id = {article_id}, create_date = '{self.datetime_input.text()}' "
                         f"where id = {id_op}")
-                    msgbox = create_msg_box(title='Уведомление', message=f'Операция по статье {self.choice_field.text()} успешно модифицирована')
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
+                    msgbox = create_msg_box(title='Уведомление',
+                                            message=f'Операция по статье {self.choice_field.text()} успешно модифицирована')
                 else:
                     msgbox = create_msg_box(title='Ошибка',
                                             message='Операции с таким наименованием квитанции не существует')
@@ -229,23 +257,32 @@ class OperationsDeleteWindow(QWidget):
             cur = conn.cursor()
             datetime_key = check_pressed(self.date_choice)
             if datetime_key:
-                cur.execute(f"select id from operations where create_date = '{self.choice_field.text()}'")
+                query = f"select id from operations where create_date = '{self.choice_field.text()}'"
+                cur.execute(query)
+                logger.debug(f"Выполнен запрос: {query}")
                 if cur.rowcount == 0:
                     msgbox = create_msg_box(title='Ошибка', message='Операции с такой датой не существует')
                 else:
                     id_op = tuple([i[0] for i in cur.fetchall()])
                     cur.execute(f"delete from operations where id in {id_op}")
+                    logger.debug(f"Выполнен запрос: {query}")
                     msgbox = create_msg_box(title='Уведомление',
                                             message=f'Операция c датой {self.choice_field.text()} удалены')
             else:
-                cur.execute(f"select id from articles where name = '{self.choice_field.text()}'")
+                query = f"select id from articles where name = '{self.choice_field.text()}'"
+                cur.execute(query)
+                logger.debug(f"Выполнен запрос: {query}")
                 if cur.rowcount == 0:
                     msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
                 else:
                     article_id = cur.fetchone()[0]
-                    cur.execute(f"select id from operations where article_id = {article_id}")
+                    query = f"select id from operations where article_id = {article_id}"
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
                     id_op = cur.fetchone()[0]
-                    cur.execute(f"delete from operations where id in {id_op}")
+                    query = f"delete from operations where id in {id_op}"
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
                     msgbox = create_msg_box(title='Уведомление',
                                             message=f'Операция по статье {self.choice_field.text()} успешно удалена')
         msgbox.exec_()

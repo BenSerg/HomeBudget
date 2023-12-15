@@ -1,6 +1,8 @@
-from create_widgets_functions import *
-from window_functions import *
 import matplotlib.pyplot as plt
+from PyQt5.QtWidgets import QWidget
+
+from application_functions.create_widgets_functions import *
+from application_functions.window_functions import *
 
 
 class GraphWindow(QWidget):
@@ -19,19 +21,28 @@ class GraphWindow(QWidget):
     def setup_ui(self):
         self.setWindowTitle('График')
         set_window_geometry(self)
-        from budget_change_window import BudgetChange
-        from amount_window import AmountWindow
-        from financial_threads_window import FinancialThreads
+        from application_windows.budget_change_window import BudgetChange
+        from application_windows.amount_window import AmountWindow
+        from application_windows.financial_threads_window import FinancialThreads
         if self.parent.__class__ == BudgetChange:
+            self.setWindowTitle('Приход и расход бюджета')
             plt.figure()
             plt.plot(self.data_y, [i[0] for i in self.data_x], color='red', label='Расход', marker='.', markersize=20)
             plt.plot(self.data_y, [i[1] for i in self.data_x], color='green', label='Приход', marker='.', markersize=20)
+            plt.xlabel('Дата проведения операции')
+            plt.ylabel('Сумма величины')
         elif self.parent.__class__ == AmountWindow:
+            self.setWindowTitle('Прибыль бюджета')
             plt.figure()
             plt.plot(self.data_y, self.data_x, color='blue', label='Прибыль', marker='.', markersize=20)
+            plt.xlabel('Время')
+            plt.ylabel('Прибыль')
         elif self.parent.__class__ == FinancialThreads:
+            self.setWindowTitle('Соотношение финансовых потоков')
             plt.figure()
-            plt.bar(self.data_x, self.data_y, color='yellow', edgecolor='black', alpha=0.5)
+            plt.bar(self.data_x, self.data_y, color='yellow', edgecolor='black', alpha=0.5, label='Соотношение потоков по статьям')
+            plt.xlabel('Наименование квитанции')
+            plt.ylabel('Число соотношения')
             plt.grid(axis='x')
         else:
             plt.figure()
@@ -39,11 +50,11 @@ class GraphWindow(QWidget):
         plt.xticks(rotation=25)
         plt.grid()
         plt.legend()
-        plt.savefig('plot.png')
+        path = 'tmp_resources/graph.png'
+        plt.savefig(path)
         plt_label = QLabel(self)
-        plot_pixmap = QtGui.QPixmap('plot.png')
+        plot_pixmap = QtGui.QPixmap(path)
         plt_label.setPixmap(plot_pixmap)
-        plt_label.setGeometry(100, 25, 750, 600)
         font = create_font(size=41)
         font.setBold(True)
         font.setWeight(75)

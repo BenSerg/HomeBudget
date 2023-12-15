@@ -1,7 +1,6 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QDate
-from PyQt5.QtWidgets import QWidget, QStackedWidget, QMainWindow, QVBoxLayout, QPushButton, QLineEdit, QDateTimeEdit, \
-    QRadioButton, QLabel, QMessageBox
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QDateTimeEdit, QRadioButton, QLabel, QMessageBox
 
 
 def create_label(widget, x, y, width, height, font, object_name):

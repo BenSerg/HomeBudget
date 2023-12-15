@@ -1,8 +1,10 @@
-from main import conn
-from main_window import MainWindow
-from create_widgets_functions import *
-from window_functions import *
-from graph_window import GraphWindow
+from PyQt5.QtWidgets import QWidget
+from config.connection import conn
+from application_windows.main_window import MainWindow
+from application_functions.create_widgets_functions import *
+from application_functions.window_functions import *
+from application_windows.graph_window import GraphWindow
+from application_functions.logger import logger
 
 
 class AmountWindow(QWidget):
@@ -13,11 +15,12 @@ class AmountWindow(QWidget):
 
     def create_graph(self):
         cur = conn.cursor()
-        cur.execute(
-            f"select accumulated_sum, create_date from (select operations.create_date, sum(sum(operations.debit)"
-            f" - sum(operations.credit)) over (order by operations.create_date) as accumulated_sum from operations"
-            f" where operations.create_date >= '{self.from_date.text()}' and operations.create_date <= '{self.to_date.text()}' "
-            f"group by operations.create_date) as subquery;")
+        query = (f"select accumulated_sum, create_date from (select operations.create_date, sum(sum(operations.debit)"
+                 f" - sum(operations.credit)) over (order by operations.create_date) as accumulated_sum from operations"
+                 f" where operations.create_date >= '{self.from_date.text()}' and operations.create_date <= '{self.to_date.text()}' "
+                 f"group by operations.create_date) as subquery;")
+        cur.execute(query)
+        logger.debug(f'Окно {self.windowTitle} Выполнен запрос: {query}')
         data = cur.fetchall()
         dct = {i[1]: i[0] for i in data}
         self.graph_window = GraphWindow(self, list(dct.keys()), list(dct.values()))
@@ -37,6 +40,7 @@ class AmountWindow(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
+        self.setWindowTitle('Прибыль бюджета')
         font = create_font()
         set_window_geometry(self)
         self.from_date = create_datetime_edit(self, 125, 40, 210, 40, font)

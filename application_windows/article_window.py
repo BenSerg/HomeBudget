@@ -1,10 +1,14 @@
-from main_window import MainWindow
-from create_widgets_functions import *
-from window_functions import *
-from main import conn
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+from application_functions.logger import logger
+from application_windows.main_window import MainWindow
+from application_functions.create_widgets_functions import *
+from application_functions.window_functions import *
+from config.connection import conn
 
 
 class ArticleWindow(QWidget):
+
     def return_to_main_menu(self):
         self.main_menu = MainWindow()
         self.main_menu.show()
@@ -13,6 +17,12 @@ class ArticleWindow(QWidget):
     def goto_enter_window(self):
         self.enter_window = ArticlesEnterWindow()
         self.enter_window.show()
+        self.close()
+
+    def article_view(self):
+        from application_windows.view_window import ViewWindow
+        self.article_view_window = ViewWindow(self)
+        self.article_view_window.show()
         self.close()
 
     def goto_modify_window(self):
@@ -26,6 +36,8 @@ class ArticleWindow(QWidget):
         self.close()
 
     def __init__(self):
+        self.article_view_window = None
+        self.view_button = None
         self.delete_window = None
         self.modify_window = None
         self.enter_window = None
@@ -58,6 +70,8 @@ class ArticleWindow(QWidget):
         self.delete_button = create_button(self, 175, 400, 461, 125, font, 'Удаление квитанций')
         self.delete_button.clicked.connect(self.goto_delete_window)
 
+        self.view_button = create_button(self, 750, 550, 50, 50, font, '👁')
+        self.view_button.clicked.connect(self.article_view)
         self.setLayout(self.layout)
 
 
@@ -69,7 +83,9 @@ class ArticlesEnterWindow(QWidget):
 
     def insert_article(self):
         cur = conn.cursor()
-        cur.execute(f"insert into articles(name) values ('{self.name_input.text()}')")
+        query = f"insert into articles(name) values ('{self.name_input.text()}')"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос: {query}")
         msgbox = create_msg_box(title='Уведомление', message='Квитанция успешно зарегистрирована')
         msgbox.exec_()
         conn.commit()
@@ -112,13 +128,14 @@ class ArticlesModifyWindow(QWidget):
 
     def modify_article(self):
         cur = conn.cursor()
-        cur.execute(
-            f"update articles set name = '{self.name_input.text()}' where name = '{self.old_name_input.text()}'")
+        query = f"update articles set name = '{self.name_input.text()}' where name = '{self.old_name_input.text()}'"
+        cur.execute(query)
+        logger.debug(query)
         if cur.rowcount == 0:
             msgbox = create_msg_box(title='Ошибка', message='Квитанция с таким старым наименованием не существует')
         else:
-            msgbox = create_msg_box(title='Уведомления', message=f'Квитанции с именем {self.old_name_input.text()} успешно изменены на {self.name_input.text()}')
-
+            msgbox = create_msg_box(title='Уведомления',
+                                    message=f'Квитанции с именем {self.old_name_input.text()} успешно изменены на {self.name_input.text()}')
         msgbox.exec_()
         conn.commit()
 
@@ -165,11 +182,14 @@ class ArticlesDeleteWindow(QWidget):
 
     def delete_article(self):
         cur = conn.cursor()
-        cur.execute(f"delete from articles where name = '{self.name_input.text()}'")
+        query = f"delete from articles where name = '{self.name_input.text()}'"
+        cur.execute(query)
+        logger.debug(f"Выполнен запрос {query}")
         if cur.rowcount == 0:
             msgbox = create_msg_box(title='Ошибка', message='Квитанции с таким наименованием не существует')
         else:
-            msgbox = create_msg_box(title='Уведомление', message=f'Квитанции с именем {self.name_input.text()} успешно удалены')
+            msgbox = create_msg_box(title='Уведомление',
+                                    message=f'Квитанции с именем {self.name_input.text()} успешно удалены')
         msgbox.exec_()
         conn.commit()
 
