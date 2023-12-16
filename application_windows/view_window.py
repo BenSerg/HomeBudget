@@ -1,3 +1,5 @@
+import csv
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget
 
@@ -11,6 +13,20 @@ class ViewWindow(QWidget):
     def return_to_journal_window(self):
         self.parent_window.show()
         self.close()
+
+    def create_report(self):
+        with open(f'reports/{self.parent_window.__class__.__name__}.csv', 'w') as file:
+            writer = csv.writer(file, lineterminator='\n', delimiter=',')
+            header = self.names
+            writer.writerow(header)
+            for row in range(self.table_widget.rowCount()):
+                row_data = []
+                for column in range(self.table_widget.columnCount()):
+                    item = self.table_widget.item(row, column)
+                    row_data.append(item.text())
+                writer.writerow(row_data)
+        msgbox = create_msg_box(title='Уведомление', message='Сохранено')
+        msgbox.exec_()
 
     def setup_table(self):
         self.table_widget = QtWidgets.QTableWidget(self)
@@ -31,6 +47,7 @@ class ViewWindow(QWidget):
         self.table_widget.setGeometry(0, 50, 750, 500)
 
     def __init__(self, parent_window):
+        self.report_button = None
         self.names = None
         self.return_button = None
         self.table_widget = None
@@ -65,3 +82,5 @@ class ViewWindow(QWidget):
         self.setup_table()
         self.return_button = create_return_button(self, font)
         self.return_button.clicked.connect(self.return_to_journal_window)
+        self.report_button = create_button(self, 500, 500, 150, 100, create_font(), 'Сохранить')
+        self.report_button.clicked.connect(self.create_report)

@@ -73,32 +73,37 @@ class BalanceCreate(QWidget):
 
     def create_balance(self):
         cur = conn.cursor()
-        cur.execute(f"insert into balance(create_date) values('{self.datetime_input.text()}')")
         query = (
-            f"select o.id from operations o join balance b on extract(month from o.create_date) = extract(month FROM b.create_date) "
-            f"where extract(month from o.create_date) = extract(month from b.create_date) and balance_id is null"
+            f"select o.id from operations o join balance b on extract(month from o.create_date) = extract(month from '{self.datetime_input.text()}'::date) "
+            f"where extract(month from o.create_date) = extract(month from '{self.datetime_input.text()}'::date) and balance_id is null"
         )
         cur.execute(query)
-        logger.debug(f"Выполнен запрос {query}")
+        if cur.rowcount == 0:
+            msgbox = create_msg_box(title='Ошибка', message='Свободных операций нет')
+        else:
+            id_operations = tuple(i[0] for i in cur.fetchall())
+            cur.execute(query)
+            logger.debug(f"Выполнен запрос {query}")
 
-        id_operations = tuple(i[0] for i in cur.fetchall())
-        cur.execute(f"select id from balance order by id desc limit 1")
-        balance_id = cur.fetchone()[0]
-        query = f"update operations set balance_id = {balance_id} where id in {id_operations}"
-        cur.execute(query)
-        logger.debug(f"Выполнен запрос {query}")
-        query = (f"update balance set debit = (select sum(debit) from operations where id in {id_operations}), "
-                 f"credit = (select sum(credit) from operations where id in {id_operations}) where id = {balance_id}")
-        cur.execute(query)
-        logger.debug(f"Выполнен запрос {query}")
+            cur.execute(f"insert into balance(create_date) values('{self.datetime_input.text()}')")
+            cur.execute(f"select id from balance order by id desc limit 1")
+            balance_id = cur.fetchone()[0]
 
-        query = f"update balance set amount = debit - credit where id = {balance_id}"
-        cur.execute(query)
-        logger.debug(f"Выполнен запрос {query}")
+            query = f"update operations set balance_id = {balance_id} where id in {id_operations}"
+            cur.execute(query)
+            logger.debug(f"Выполнен запрос {query}")
+            query = (f"update balance set debit = (select sum(debit) from operations where id in {id_operations}), "
+                     f"credit = (select sum(credit) from operations where id in {id_operations}) where id = {balance_id}")
+            cur.execute(query)
+            logger.debug(f"Выполнен запрос {query}")
 
-        msgbox = create_msg_box(title='Уведомления', message='Баланс успешно сформирован')
+            query = f"update balance set amount = debit - credit where id = {balance_id}"
+            cur.execute(query)
+            logger.debug(f"Выполнен запрос {query}")
+
+            msgbox = create_msg_box(title='Уведомления', message='Баланс успешно сформирован')
+            conn.commit()
         msgbox.exec_()
-        conn.commit()
 
     def __init__(self):
         super().__init__()
@@ -137,7 +142,7 @@ class BalanceDelete(QWidget):
 
     def delete_balance(self):
         cur = conn.cursor()
-        cur.execute(f"select * from balance where id = 10")
+        cur.execute(f"select * from balance where id = {self.input_field.text()}")
         if cur.rowcount == 0:
             msgbox = create_msg_box(title='Ошибка',
                                     message=f'Баланс с идентификатором {self.input_field.text()} не существует')

@@ -91,11 +91,20 @@ class OperationsEnterWindow(QWidget):
             msgbox = create_msg_box('Ошибка', f'Квитанции с наименованием {self.name_input.text()} не существует')
         else:
             article_id = cur.fetchone()[0]
-            query = (f"insert into operations(article_id, debit, credit, create_date) values({article_id}, {self.debit_input.text()}, "
-                     f"{self.credit_input.text()}, '{self.datetime_input.text()}')")
-            cur.execute(query)
-            logger.debug(f"Выполнен запрос: {query}")
-            msgbox = create_msg_box('Уведомление', f'Операция по квитанции {self.name_input.text()} успешно вставлена')
+            if self.debit_input.text() == '0' or self.credit_input.text() == '0':
+                msgbox = create_msg_box('Ошибка', 'Операция не может иметь нулевые суммы')
+            else:
+                query = f"select extract(month from '{self.datetime_input.text()}'::date) > extract(month from (select max(create_date) from balance))"
+                cur.execute(query)
+                logger.debug(f"Выполняется запрос на проверку попадания в закрытый период: {query}")
+                if not cur.fetchone()[0]:
+                    msgbox = create_msg_box('Ошибка', 'Операция попала в закрытый период')
+                else:
+                    query = (f"insert into operations(article_id, debit, credit, create_date) values({article_id}, {self.debit_input.text()}, "
+                             f"{self.credit_input.text()}, '{self.datetime_input.text()}')")
+                    cur.execute(query)
+                    logger.debug(f"Выполнен запрос: {query}")
+                    msgbox = create_msg_box('Уведомление', f'Операция по квитанции {self.name_input.text()} успешно вставлена')
         msgbox.exec_()
         conn.commit()
 
