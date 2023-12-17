@@ -3,7 +3,7 @@ from PyQt5.QtCore import QDate
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QDateTimeEdit, QRadioButton, QLabel, QMessageBox
 
 
-def create_label(widget, x, y, width, height, font, object_name):
+def create_label(widget: object, x: object, y: object, width: object, height: object, font: object, object_name: object) -> object:
     label = QLabel(object_name, widget)
     label.setGeometry(QtCore.QRect(x, y, width, height))
     label.setFont(font)

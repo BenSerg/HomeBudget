@@ -289,7 +289,7 @@ class OperationsDeleteWindow(QWidget):
                     cur.execute(query)
                     logger.debug(f"Выполнен запрос: {query}")
                     id_op = cur.fetchone()[0]
-                    query = f"delete from operations where id in {id_op}"
+                    query = f"delete from operations where id = {id_op}"
                     cur.execute(query)
                     logger.debug(f"Выполнен запрос: {query}")
                     msgbox = create_msg_box(title='Уведомление',

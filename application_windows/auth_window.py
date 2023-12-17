@@ -1,11 +1,9 @@
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
 from application_functions.create_widgets_functions import create_font, create_line_edit, create_label, \
-    create_ok_button, create_msg_box
+    create_ok_button, create_msg_box, create_button
 from application_functions.logger import logger
 from application_functions.window_functions import set_window_geometry
-from application_windows.main_window import MainWindow
 from config.connection import conn
 
 
@@ -16,6 +14,7 @@ class AuthWindow(QWidget):
         cur.execute(query)
         logger.debug(f"Введен запрос: {query}")
         if cur.rowcount > 0:
+            from application_windows.main_window import MainWindow
             self.main_window = MainWindow()
             self.main_window.show()
             self.close()
@@ -23,8 +22,15 @@ class AuthWindow(QWidget):
             msgbox = create_msg_box(title='Ошибка', message='Неправильный логин пользователя или пароль')
             msgbox.exec_()
 
+    def goto_register_window(self):
+        from application_windows.register_window import RegisterWindow
+        self.register_window = RegisterWindow()
+        self.register_window.show()
+        self.close()
+
     def __init__(self):
         super().__init__()
+        self.register_window = None
         self.main_window = None
         self.ok_button = None
         self.password_label = None
@@ -49,10 +55,7 @@ class AuthWindow(QWidget):
 
         self.ok_button = create_ok_button(self, font)
         self.ok_button.clicked.connect(self.goto_main_window)
-        font.setPointSize(41)
-        font.setBold(True)
-        font.setWeight(75)
 
+        self.register_button = create_button(self, 0, 0, 150, 51, font, 'Регистрация')
+        self.register_button.clicked.connect(self.goto_register_window)
         self.setLayout(self.layout)
-
-

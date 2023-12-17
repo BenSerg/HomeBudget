@@ -1,3 +1,0 @@
-2023-12-16 03:08:18,039 - postgresql_logger - DEBUG - Введен запрос: select user_name, user_password from users where user_name = 'serg' and user_password = md5('123')
-2023-12-16 03:08:20,436 - postgresql_logger - DEBUG - Выполнен запрос: select * from articles
-2023-12-16 03:08:28,956 - postgresql_logger - DEBUG - Выполнен запрос: select * from operations

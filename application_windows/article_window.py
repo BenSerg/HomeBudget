@@ -204,7 +204,7 @@ class ArticlesDeleteWindow(QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setWindowTitle('Регистрация квитанций')
+        self.setWindowTitle('Удаление квитанций')
         set_window_geometry(self)
         font = create_font()
         self.name_input = create_line_edit(self, 245, 220, 311, 31, font)
