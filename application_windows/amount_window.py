@@ -9,9 +9,13 @@ from application_functions.logger import logger
 
 class AmountWindow(QWidget):
     def return_to_main_menu(self):
-        self.main_menu = MainWindow()
-        self.main_menu.show()
-        self.close()
+        if hasattr(self, 'main_menu'):
+            self.main_menu.show()
+            self.close()
+        else:
+            self.main_menu = MainWindow()
+            self.main_menu.show()
+            self.close()
 
     def create_graph(self):
         cur = conn.cursor()

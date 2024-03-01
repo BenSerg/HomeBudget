@@ -1,9 +1,10 @@
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QDate
-from PyQt5.QtWidgets import QPushButton, QLineEdit, QDateTimeEdit, QRadioButton, QLabel, QMessageBox
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QDateTimeEdit, QRadioButton, QLabel, QMessageBox, QWidget
 
 
-def create_label(widget: object, x: object, y: object, width: object, height: object, font: object, object_name: object) -> object:
+def create_label(widget: QWidget, x: int, y: int, width: int, height: int, font: QFont, object_name: str) -> QLabel:
     label = QLabel(object_name, widget)
     label.setGeometry(QtCore.QRect(x, y, width, height))
     label.setFont(font)
@@ -11,7 +12,8 @@ def create_label(widget: object, x: object, y: object, width: object, height: ob
     return label
 
 
-def create_button(widget, x, y, width, height, font, object_name, background_color='white'):
+def create_button(widget: QWidget, x: int, y: int, width: int, height: int, font: QFont, object_name: str,
+                  background_color='white') -> QPushButton:
     button = QPushButton(object_name, widget)
     button.setGeometry(QtCore.QRect(x, y, width, height))
     button.setFont(font)
@@ -20,18 +22,19 @@ def create_button(widget, x, y, width, height, font, object_name, background_col
     return button
 
 
-def create_return_button(widget, font):
+def create_return_button(widget: QWidget, font: QFont) -> QPushButton:
     return create_button(widget, 0, 0, 91, 51, font, '←')
 
 
-def create_font(family='Serif', size=15):
+def create_font(family='Serif', size=15) -> QFont:
     font = QtGui.QFont()
     font.setFamily(family)
     font.setPointSize(size)
     return font
 
 
-def create_line_edit(widget, x, y, width, height, font, background_color='white'):
+def create_line_edit(widget: QWidget, x: int, y: int, width: int, height: int, font: QFont,
+                     background_color='white') -> QLineEdit:
     line_edit = QLineEdit(widget)
     line_edit.setGeometry(QtCore.QRect(x, y, width, height))
     line_edit.setFont(font)
@@ -39,7 +42,8 @@ def create_line_edit(widget, x, y, width, height, font, background_color='white'
     return line_edit
 
 
-def create_datetime_edit(widget, x, y, width, height, font, background_color='white'):
+def create_datetime_edit(widget: QWidget, x: int, y: int, width: int, height: int, font: QFont,
+                         background_color='white') -> QDateTimeEdit:
     datetime_edit = QDateTimeEdit(widget)
     datetime_edit.setGeometry(QtCore.QRect(x, y, width, height))
     datetime_edit.setFont(font)
@@ -48,15 +52,16 @@ def create_datetime_edit(widget, x, y, width, height, font, background_color='wh
     return datetime_edit
 
 
-def check_pressed(radiobutton: QRadioButton):
+def check_pressed(radiobutton: QRadioButton) -> bool:
     return radiobutton.isChecked()
 
 
-def create_ok_button(widget, font):
+def create_ok_button(widget: QWidget, font: QFont) -> QPushButton:
     return create_button(widget, 300, 450, 141, 81, font, 'OK')
 
 
-def create_radio_button(widget, x, y, width, height, font, object_name, background_color='white'):
+def create_radio_button(widget: QWidget, x: int, y: int, width: int, height: int, font: QFont, object_name: str,
+                        background_color='white') -> QRadioButton:
     button = QRadioButton(object_name, widget)
     button.setGeometry(QtCore.QRect(x, y, width, height))
     button.setFont(font)
@@ -65,7 +70,7 @@ def create_radio_button(widget, x, y, width, height, font, object_name, backgrou
     return button
 
 
-def create_msg_box(title, message):
+def create_msg_box(title: str, message: str) -> QMessageBox:
     msgbox = QMessageBox()
     msgbox.setIcon(QMessageBox.Information)
     msgbox.setWindowTitle(title)
